@@ -22,7 +22,7 @@ export class ServiceApiEndpoint{
     }
 
     private build_ws_url(endpoint: string): string {
-        let url = `ws://${API_ENPOINT}/ws/${endpoint}/${this.service}`;
+        let url = `wss://${API_ENPOINT}/ws/${endpoint}/${this.service}`;
         if (this.access_key) {
             url += `?access_key=${this.access_key}`;
         }
