@@ -1,20 +1,25 @@
-const API_ENPOINT = import.meta.env.VITE_REMOTE_COMPOSE_MANAGER_ENPOINT;
+const API_ENDPOINT = import.meta.env.VITE_REMOTE_COMPOSE_MANAGER_ENPOINT;
 
-type OnNewLogLineCallback = (line: string) => void;
+type OnLogLinesCallback = (logs: string[]) => void;
 type UnsubscribeCallback = () => void;
 
-export class ServiceApiEndpoint{
-    private readonly on_new_log_line_callbacks: OnNewLogLineCallback[] = [];
+export const get_available_services = async (access_key: string): Promise<string[]> => {
+    const response = await fetch(`https://${API_ENDPOINT}/services?access_key=${access_key}`);
+    return await response.json();
+}
+
+export class ServiceApiEndpoint {
+
+    private readonly on_new_log_line_callbacks: OnLogLinesCallback[] = [];
     private websocket: WebSocket | null = null;
-    constructor(
-        public readonly service: string,
-        public readonly access_key: string | null = null,
-    ) {
+    private log_lines: string[] = [];
+
+    constructor(public readonly service: string, public readonly access_key: string | null = null,) {
         this.refresh_websocket();
     }
 
     private build_url(endpoint: string): string {
-        let url = `https://${API_ENPOINT}/${endpoint}/${this.service}`;
+        let url = `https://${API_ENDPOINT}/${endpoint}/${this.service}`;
         if (this.access_key) {
             url += `?access_key=${this.access_key}`;
         }
@@ -22,7 +27,7 @@ export class ServiceApiEndpoint{
     }
 
     private build_ws_url(endpoint: string): string {
-        let url = `wss://${API_ENPOINT}/ws/${endpoint}/${this.service}`;
+        let url = `wss://${API_ENDPOINT}/ws/${endpoint}/${this.service}`;
         if (this.access_key) {
             url += `?access_key=${this.access_key}`;
         }
@@ -33,8 +38,9 @@ export class ServiceApiEndpoint{
         this.websocket && this.websocket.close();
         this.websocket = new WebSocket(this.build_ws_url('logs'));
         this.websocket.onmessage = (event) => {
+            this.log_lines.push(event.data);
             for (const callback of this.on_new_log_line_callbacks) {
-                callback(event.data);
+                callback(this.log_lines);
             }
         };
     }
@@ -48,7 +54,10 @@ export class ServiceApiEndpoint{
         return text.split('\n');
     }
 
-    public on_new_log_line(callback: OnNewLogLineCallback): UnsubscribeCallback {
+    public on_log_lines(callback: OnLogLinesCallback, include_old = true): UnsubscribeCallback {
+        if (include_old) {
+            callback(this.log_lines)
+        }
         this.on_new_log_line_callbacks.push(callback);
         return () => {
             const index = this.on_new_log_line_callbacks.indexOf(callback);
