@@ -1,16 +1,20 @@
 <script lang="ts">
   import type {ServiceApiEndpoint} from "../api_handler";
+
   export let api_handler: ServiceApiEndpoint;
 
   let lines: string[] = [];
-  let first_load = true;
   let logs_el: HTMLElement;
   let wrap_lines = true;
   let auto_scroll = true;
+  let last_scroll_ts = 0;
+  let scroll_timeout: number | undefined;
+  let unregister: () => void;
 
   $: if (api_handler) {
     lines = [];
-    api_handler.on_log_lines(logs => {
+    unregister && unregister();
+    unregister = api_handler.on_log_lines(logs => {
       lines = logs;
     });
   }
@@ -19,14 +23,23 @@
 
   $: if (logs_el && auto_scroll) {
     logs;
-    logs_el.scrollTo({
-      top: logs_el.scrollHeight + 10000,
-      behavior: first_load ? 'auto' : 'smooth'
-    });
 
-    if (first_load) {
-      setTimeout(() => {
-        first_load = false;
+    const now = Date.now();
+
+    if (now - last_scroll_ts > 1000) {
+      last_scroll_ts = now;
+      logs_el.scrollTo({
+        top: logs_el.scrollHeight + 10000,
+        behavior: 'smooth'
+      });
+    } else if (!scroll_timeout && logs_el.scrollHeight - logs_el.scrollTop - logs_el.clientHeight < 100) {
+      scroll_timeout = setTimeout(() => {
+        scroll_timeout = undefined;
+        last_scroll_ts = Date.now();
+        logs_el.scrollTo({
+          top: logs_el.scrollHeight + 10000,
+          behavior: 'smooth'
+        });
       }, 1000);
     }
   }

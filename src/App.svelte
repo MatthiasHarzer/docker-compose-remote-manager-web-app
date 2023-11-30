@@ -1,8 +1,9 @@
 <script lang="ts">
-  import {get_available_services, ServiceApiEndpoint} from "./api_handler";
+  import {AccessKeyScope, get_available_services, ServiceApiEndpoint} from "./api_handler";
   import {onMount} from "svelte";
   import Logs from "./lib/Logs.svelte";
   import ServiceSelect from "./lib/ServiceSelect.svelte";
+  import Status from "./lib/Status.svelte";
 
   const urlParams = new URLSearchParams(window.location.search);
 
@@ -14,37 +15,32 @@
   let running = false;
   let loading = true;
   let available_services: string[] = [];
+  let available_scopes: AccessKeyScope[] = [];
   let selected_service = service;
+  let status: Status | null = null;
 
-  const fetch_status = async () => {
-    const was_running = running;
-    running = await api_handler.status();
-
-    if (running && !was_running) {
-      api_handler.refresh_websocket();
-    }
-  }
 
   onMount(async () => {
-    available_services = await get_available_services(access_key ?? "");
-    await fetch_status();
+    const response = await get_available_services(access_key ?? "");
+    available_services = response.services;
+    available_scopes = response.scopes;
     loading = false;
-
-    setInterval(fetch_status, 5000);
   });
 
   $: if (selected_service) {
     api_handler = new ServiceApiEndpoint(selected_service, access_key);
-    fetch_status();
     urlParams.set('service', selected_service);
     window.history.replaceState({}, '', `${location.pathname}?${urlParams}`);
   }
 
+  $: has_manage_scope = available_scopes.includes(AccessKeyScope.MANAGE);
+  $: has_view_status_scope = available_scopes.includes(AccessKeyScope.STATUS) || has_manage_scope;
+  $: has_view_logs_scope = available_scopes.includes(AccessKeyScope.LOGS) || has_manage_scope;
 
   const start = async () => {
     loading = true;
     await api_handler.start();
-    running = true;
+    await status?.fetch_status();
     loading = false;
     api_handler.refresh_websocket();
   };
@@ -52,13 +48,13 @@
   const stop = async () => {
     loading = true;
     await api_handler.stop();
+    await status?.fetch_status();
     loading = false;
-    running = false;
   };
 
   const toggle = async () => {
     if (running) {
-      const confirmed = confirm("Are you sure you want to stop the service?");
+      const confirmed = confirm(`Are you sure you want to stop the '${selected_service}' service?`);
       confirmed && await stop();
     } else {
       await start();
@@ -74,21 +70,23 @@
     <div class="app-bar-right">
 
 
-      <div class="service-running-state flex-center" class:not-initialized={loading} class:running={running}>
-        {#if loading}
-          <div class="spinner"/>
-        {:else}
-          <div class="dot" class:pulsing={running}/>
-        {/if}
-        <span class="text">{running ? "Running" : "Stopped"}</span>
-      </div>
+      {#if has_view_status_scope}
+        <Status
+            api_handler={api_handler}
+            bind:running
+            bind:this={status}
+            loading={loading}
+        />
+      {/if}
 
-      <button class="clear toggle-running" class:running on:click={toggle}>
-      <span class="material-icons">
-        power_settings_new
-      </span>
-        {running ? "Stop" : "Start"}
-      </button>
+      {#if has_manage_scope}
+        <button class="clear toggle-running" class:running on:click={toggle}>
+        <span class="material-icons">
+          power_settings_new
+        </span>
+          {running ? "Stop" : "Start"}
+        </button>
+      {/if}
     </div>
   </div>
   <div class="logs">
@@ -132,58 +130,6 @@
     }
   }
 
-  .service-running-state {
-    border-radius: 5px;
-    padding: 5px 15px;
-    background-color: #be392a;
-
-    &.not-initialized {
-      background-color: transparent !important;
-      border: 1px solid grey;
-    }
-
-    &.running {
-      background-color: #51b24a;
-
-      .dot {
-        animation-name: red_pulsing;
-        animation-duration: 1.5s;
-        animation-iteration-count: infinite;
-      }
-    }
-
-    .dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background-color: #fff;
-      margin-right: 5px;
-    }
-
-    .spinner {
-      width: 15px;
-      height: 15px;
-      border: 3px solid #FFF;
-      border-bottom-color: transparent;
-      border-radius: 50%;
-      display: inline-block;
-      box-sizing: border-box;
-      animation: rotation 1s linear infinite;
-      margin-right: 10px;
-
-
-      @keyframes rotation {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-    }
-  }
-
 
   .toggle-running {
     background-color: #262626;
@@ -217,15 +163,5 @@
     flex-direction: column;
   }
 
-  @keyframes red_pulsing {
-    0% {
-      background-color: #ff0000;
-    }
-    50% {
-      background-color: #ab4444;
-    }
-    100% {
-      background-color: #ff0000;
-    }
-  }
+
 </style>

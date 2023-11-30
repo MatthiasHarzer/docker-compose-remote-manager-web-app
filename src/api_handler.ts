@@ -3,10 +3,20 @@ const API_ENDPOINT = import.meta.env.VITE_REMOTE_COMPOSE_MANAGER_ENPOINT;
 type OnLogLinesCallback = (logs: string[]) => void;
 type UnsubscribeCallback = () => void;
 
-export const get_available_services = async (access_key: string): Promise<string[]> => {
+export enum AccessKeyScope {
+    MANAGE = "manage", LOGS = "logs", STATUS = "status"
+}
+
+export interface AvailableServices {
+    "services": string[];
+    "scopes": AccessKeyScope[];
+}
+
+export const get_available_services = async (access_key: string): Promise<AvailableServices> => {
     const response = await fetch(`https://${API_ENDPOINT}/services?access_key=${access_key}`);
     return await response.json();
 }
+
 
 export class ServiceApiEndpoint {
 
