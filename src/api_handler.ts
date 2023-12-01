@@ -7,12 +7,12 @@ export enum AccessKeyScope {
     MANAGE = "manage", LOGS = "logs", STATUS = "status"
 }
 
-export interface AvailableServices {
-    "services": string[];
+export interface Service {
+    "name": string;
     "scopes": AccessKeyScope[];
 }
 
-export const get_available_services = async (access_key: string): Promise<AvailableServices> => {
+export const get_available_services = async (access_key: string): Promise<Service[]> => {
     const response = await fetch(`https://${API_ENDPOINT}/services?access_key=${access_key}`);
     return await response.json();
 }
@@ -24,12 +24,12 @@ export class ServiceApiEndpoint {
     private websocket: WebSocket | null = null;
     private log_lines: string[] = [];
 
-    constructor(public readonly service: string, public readonly access_key: string | null = null,) {
+    constructor(public readonly service: Service, public readonly access_key: string | null = null,) {
         this.refresh_websocket();
     }
 
     private build_url(endpoint: string): string {
-        let url = `https://${API_ENDPOINT}/${endpoint}/${this.service}`;
+        let url = `https://${API_ENDPOINT}/${endpoint}/${this.service.name}`;
         if (this.access_key) {
             url += `?access_key=${this.access_key}`;
         }
@@ -37,7 +37,7 @@ export class ServiceApiEndpoint {
     }
 
     private build_ws_url(endpoint: string): string {
-        let url = `wss://${API_ENDPOINT}/ws/${endpoint}/${this.service}`;
+        let url = `wss://${API_ENDPOINT}/ws/${endpoint}/${this.service.name}`;
         if (this.access_key) {
             url += `?access_key=${this.access_key}`;
         }

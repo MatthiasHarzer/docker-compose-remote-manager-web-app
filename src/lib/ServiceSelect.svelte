@@ -1,12 +1,14 @@
 <script lang="ts">
-  export let available_services: string[] = [];
-  export let selected_service: string | null = null;
+  import type {Service} from "../api_handler";
+
+  export let available_services: Service[] = [];
+  export let selected_service: Service | null = null;
 </script>
 
 
 <select bind:value={selected_service} class="select">
   {#each available_services as service}
-    <option value={service}>{service}</option>
+    <option value={service}>{service.name}</option>
   {/each}
   {#if selected_service === null}
     <option value={null}>Select a service</option>

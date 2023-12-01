@@ -1,5 +1,6 @@
 <script lang="ts">
   import {AccessKeyScope, get_available_services, ServiceApiEndpoint} from "./api_handler";
+  import type {Service} from "./api_handler";
   import {onMount} from "svelte";
   import Logs from "./lib/Logs.svelte";
   import ServiceSelect from "./lib/ServiceSelect.svelte";
@@ -10,32 +11,32 @@
   const service = urlParams.get('service');
   const access_key = urlParams.get('access_key');
 
-  let api_handler = new ServiceApiEndpoint(service ?? "", access_key);
+  let api_handler: ServiceApiEndpoint = null;
 
   let running = false;
   let loading = true;
-  let available_services: string[] = [];
-  let available_scopes: AccessKeyScope[] = [];
-  let selected_service = service;
+  let selected_service: Service = null;
   let status: Status | null = null;
+  let services: Service[] = [];
 
 
   onMount(async () => {
-    const response = await get_available_services(access_key ?? "");
-    available_services = response.services;
-    available_scopes = response.scopes;
+    services = await get_available_services(access_key ?? "");
+    selected_service = services.find(s => s.name === service) ?? null;
     loading = false;
   });
 
   $: if (selected_service) {
     api_handler = new ServiceApiEndpoint(selected_service, access_key);
-    urlParams.set('service', selected_service);
+    urlParams.set('service', selected_service.name);
     window.history.replaceState({}, '', `${location.pathname}?${urlParams}`);
   }
 
+  $: available_scopes = selected_service?.scopes ?? [];
+
   $: has_manage_scope = available_scopes.includes(AccessKeyScope.MANAGE);
   $: has_view_status_scope = available_scopes.includes(AccessKeyScope.STATUS) || has_manage_scope;
-  $: has_view_logs_scope = available_scopes.includes(AccessKeyScope.LOGS) || has_manage_scope;
+  // $: has_view_logs_scope = available_scopes.includes(AccessKeyScope.LOGS) || has_manage_scope;
 
   const start = async () => {
     loading = true;
@@ -65,7 +66,7 @@
 <main>
   <div class="app-bar">
     <div class="title">
-      <ServiceSelect available_services={available_services} bind:selected_service/>
+      <ServiceSelect available_services={services} bind:selected_service/>
     </div>
     <div class="app-bar-right">
 

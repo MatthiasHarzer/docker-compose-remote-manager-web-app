@@ -7,8 +7,6 @@
   let logs_el: HTMLElement;
   let wrap_lines = true;
   let auto_scroll = true;
-  let last_scroll_ts = 0;
-  let scroll_timeout: number | undefined;
   let unregister: () => void;
 
   $: if (api_handler) {
@@ -24,24 +22,9 @@
   $: if (logs_el && auto_scroll) {
     logs;
 
-    const now = Date.now();
-
-    if (now - last_scroll_ts > 1000) {
-      last_scroll_ts = now;
-      logs_el.scrollTo({
-        top: logs_el.scrollHeight + 10000,
-        behavior: 'smooth'
-      });
-    } else if (!scroll_timeout && logs_el.scrollHeight - logs_el.scrollTop - logs_el.clientHeight < 100) {
-      scroll_timeout = setTimeout(() => {
-        scroll_timeout = undefined;
-        last_scroll_ts = Date.now();
-        logs_el.scrollTo({
-          top: logs_el.scrollHeight + 10000,
-          behavior: 'smooth'
-        });
-      }, 1000);
-    }
+    logs_el.scrollTo({
+      top: logs_el.scrollHeight + 10000,
+    });
   }
 </script>
 
