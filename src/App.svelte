@@ -1,6 +1,6 @@
 <script lang="ts">
-  import {AccessKeyScope, get_available_services, ServiceApiEndpoint} from "./api_handler";
   import type {Service} from "./api_handler";
+  import {AccessKeyScope, get_available_services, ServiceApiEndpoint} from "./api_handler";
   import {onMount} from "svelte";
   import Logs from "./lib/Logs.svelte";
   import ServiceSelect from "./lib/ServiceSelect.svelte";
@@ -11,11 +11,11 @@
   const service = urlParams.get('service');
   const access_key = urlParams.get('access_key');
 
-  let api_handler: ServiceApiEndpoint = null;
+  let api_handler: ServiceApiEndpoint | null = null;
 
   let running = false;
   let loading = true;
-  let selected_service: Service = null;
+  let selected_service: Service | null = null;
   let status: Status | null = null;
   let services: Service[] = [];
 
@@ -40,15 +40,15 @@
 
   const start = async () => {
     loading = true;
-    await api_handler.start();
+    await api_handler?.start();
     await status?.fetch_status();
     loading = false;
-    api_handler.refresh_websocket();
+    api_handler?.refresh_websocket();
   };
 
   const stop = async () => {
     loading = true;
-    await api_handler.stop();
+    await api_handler?.stop();
     await status?.fetch_status();
     loading = false;
   };
@@ -91,7 +91,9 @@
     </div>
   </div>
   <div class="logs">
-    <Logs api_handler={api_handler}/>
+    {#if api_handler}
+      <Logs api_handler={api_handler}/>
+    {/if}
   </div>
 </main>
 
@@ -101,10 +103,10 @@
     flex-direction: column;
     height: 100vh;
     width: 100%;
+    overflow-y: hidden;
 
     .app-bar {
       flex: 0 0 auto;
-      overflow: hidden;
       height: 54px;
       box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
       0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -159,9 +161,10 @@
   }
 
   .logs {
-    flex: 1 1 auto;
+    flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
 

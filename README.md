@@ -5,9 +5,9 @@ A simple web app to manage docker compose services via the [`docker-compose-remo
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ### Setup
-Add a `.env` file in the projects root directory and provide the `VITE_REMOTE_COMPOSE_MANAGER_ENPOINT` where the [`docker-compose-remote-manager`](https://github.com/MatthiasHarzer/docker-compose-remote-manager) is hosted. Don't include a protocol, just the domain or ip address.
+Add a `.env` file in the projects root directory and provide the `VITE_REMOTE_COMPOSE_MANAGER_ENDPOINT` where the [`docker-compose-remote-manager`](https://github.com/MatthiasHarzer/docker-compose-remote-manager) is hosted. You can specify, whether a secure protocol should be used or not by adding `https://` / `wss://` or `http://` / `ws://` to the endpoint. If not specified, `https://` / `wss://` will be used by default.
 
 For example:
 ```env
-VITE_REMOTE_COMPOSE_MANAGER_ENPOINT=compose-api.example.com
+VITE_REMOTE_COMPOSE_MANAGER_ENDPOINT=compose-api.example.com
 ```
