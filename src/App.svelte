@@ -55,7 +55,7 @@
 
   const toggle = async () => {
     if (running) {
-      const confirmed = confirm(`Are you sure you want to stop the '${selected_service}' service?`);
+      const confirmed = confirm(`Are you sure you want to stop the '${selected_service?.name}' service?`);
       confirmed && await stop();
     } else {
       await start();
