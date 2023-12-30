@@ -27,7 +27,7 @@
     lines = [];
     unregister && unregister();
     unregister = api_handler.on_log_lines(logs => {
-      lines = logs;
+      lines = logs.filter(l => l !== null);
 
       if (logs_el && $auto_scroll){
         setTimeout(()=>{
@@ -82,7 +82,7 @@
     </div>
   </div>
   <div bind:this={logs_el} class="logs" class:wrap-lines={$wrap_lines}>
-    {#each lines as [name, time, log] (time + name)}
+    {#each lines as [name, time, log] (time)}
       <div class="log-line">
         {#if $show_timestamps}
           <div class="log-time">[{format_time(time)}]</div>
