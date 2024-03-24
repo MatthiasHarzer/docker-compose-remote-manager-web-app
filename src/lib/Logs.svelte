@@ -48,7 +48,7 @@
     }
 
     const date = new Date(time.trim());
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDay() + 1)} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate() + 1)} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   }
   const get_service_color = (name: string): string => {
     const hash = name.split("").reduce((acc, char) => {
