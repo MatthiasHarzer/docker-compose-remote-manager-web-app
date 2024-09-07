@@ -82,12 +82,12 @@
     </div>
   </div>
   <div bind:this={logs_el} class="logs" class:wrap-lines={$wrap_lines}>
-    {#each lines as [name, time, log] (time)}
+    {#each lines as [name, time, log]}
       <div class="log-line">
         {#if $show_timestamps}
           <div class="log-time">[{format_time(time)}]</div>
         {/if}
-        <div class="log-name" style="color: {get_service_color(name)}">{name}<span>|</span></div>
+        <div class="log-name" style="color: {get_service_color(name)}">{name}<span class="divider">|</span></div>
 
         <div class="log-text">{log}</div>
       </div>
@@ -97,7 +97,6 @@
 
 <style lang="scss">
   .main {
-    //flex: 1 1 auto;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -109,7 +108,6 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
-    //height: 10%;
     border-bottom: 1px solid var(--color-border);
 
     h3 {
@@ -154,7 +152,6 @@
     height: 10%;
     resize: none;
     overflow: auto;
-    //border: none;
     border-radius: 3px;
     background-color: #3B3B3B;
     border: 1px solid #d9d9d9;
@@ -177,6 +174,10 @@
 
       .log-name {
         font-weight: bold;
+
+        .divider {
+          margin: 0 0.2rem;
+        }
       }
 
       .log-text {
