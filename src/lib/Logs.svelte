@@ -6,7 +6,8 @@
 
   let lines: string[][] = [];
   let logs_el: HTMLElement;
-  let unregister: () => void;
+  let selected_services: string[] = [];
+  let service_log_count: Record<string, number> = {};
   const material_color_pallet = [
     "#a371bb",
     "#6196d3",
@@ -23,20 +24,38 @@
   $: auto_scroll = local_storage_memo('auto_scroll', true);
   $: show_timestamps = local_storage_memo('show_timestamps', true);
 
-  $: if (api_handler) {
-    lines = [];
-    unregister && unregister();
-    unregister = api_handler.on_log_lines(logs => {
-      lines = logs.filter(l => l !== null);
+  $: log_lines = api_handler.log_lines;
+  $: available_micro_services = api_handler.available_micro_services;
 
-      if (logs_el && $auto_scroll){
-        setTimeout(()=>{
-          logs_el.scrollTo({
-            top: logs_el.scrollHeight + 10000,
-          });
-        }, 1);
-      }
-    });
+  $: if ($log_lines && logs_el) {
+    lines = $log_lines.filter((line) => line?.length === 3);
+    service_log_count = lines.reduce((acc, [name]) => {
+      acc[name] = (acc[name] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    if (logs_el && $auto_scroll){
+      setTimeout(()=>{
+        logs_el.scrollTo({
+          top: logs_el.scrollHeight + 10000,
+        });
+      }, 1);
+    }
+  }
+
+  $: filtered_lines = lines.filter(([name,]) => {
+    if (selected_services.length === 0) return true;
+    return selected_services.includes(name);
+  });
+
+  $: if(selected_services && $auto_scroll){
+    setTimeout(()=>{
+      logs_el.scrollTo({
+        top: logs_el.scrollHeight + 10000,
+      });
+    }, 1);
+  }
+  $: if($available_micro_services) {
+    selected_services = selected_services.filter((service) => $available_micro_services.includes(service));
   }
 
 
@@ -59,12 +78,29 @@
     return material_color_pallet[Math.abs(hash) % material_color_pallet.length];
   }
 
+  const toggle_service = (service: string) => {
+    if (selected_services.includes(service)) {
+      selected_services = selected_services.filter((s) => s !== service);
+    } else {
+      selected_services = [...selected_services, service];
+    }
+  }
 
 </script>
 
 <div class="main">
   <div class="title">
-    <h3>Logs <span class="num-lines">({lines.length} lines)</span></h3>
+    <div class="left">
+      <h3>Logs <span class="num-lines">({lines.length} lines)</span></h3>
+      <div class="micro-service-select">
+        {#each $available_micro_services as service}
+          <label style="--color: {get_service_color(service)};" class="service-item" class:selected={selected_services.includes(service)}>
+            <input hidden type="checkbox" checked={selected_services.includes(service)} on:change={()=>toggle_service(service)}/>
+            {service} ({service_log_count[service] ?? 0})
+          </label>
+        {/each}
+      </div>
+    </div>
     <div class="config-select">
       <div class="cb-item">
 
@@ -82,7 +118,7 @@
     </div>
   </div>
   <div bind:this={logs_el} class="logs" class:wrap-lines={$wrap_lines}>
-    {#each lines as [name, time, log]}
+    {#each filtered_lines as [name, time, log]}
       <div class="log-line">
         {#if $show_timestamps}
           <div class="log-time">[{format_time(time)}]</div>
@@ -115,11 +151,37 @@
     padding: 0.5rem 1rem;
     border-bottom: 1px solid var(--color-border);
 
+    .left {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 1rem;
+    }
+
     h3 {
       margin: 0;
 
       .num-lines {
         font-weight: normal;
+      }
+    }
+
+    .micro-service-select {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      .service-item {
+        border: 1px solid #d9d9d9;
+        border-radius: 5px;
+        padding: 0.3rem 0.5rem 0.2rem 0.5rem;
+        margin-right: 0.5rem;
+        cursor: pointer;
+        background-color: #202020;
+
+        &.selected {
+          background-color: color-mix(in srgb, var(--color) 70%, #000000 30%);
+        }
       }
     }
 
