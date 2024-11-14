@@ -13,15 +13,24 @@ const get_http_ws_endpoints = (): [string, string] => {
 }
 const [HTTP_ENDPOINT, WS_ENDPOINT] = get_http_ws_endpoints();
 
-type LogLine = [string, string, string];
+export type LogLine = [string, string, string];
 
 export enum AccessKeyScope {
     MANAGE = "manage", LOGS = "logs", STATUS = "status"
 }
 
+export type SubService = string;
+export type SubServiceCommand = {
+    id: string;
+    label: string;
+    sub_service: SubService
+};
+
 export interface Service {
     "name": string;
     "scopes": AccessKeyScope[];
+    "sub_services": SubService[];
+    "commands": SubServiceCommand[];
 }
 
 export const get_available_services = async (access_key: string): Promise<Service[]> => {
@@ -29,6 +38,25 @@ export const get_available_services = async (access_key: string): Promise<Servic
     return await response.json();
 }
 
+export interface RunCommandResponse {
+    "success": boolean;
+    "output": string;
+}
+
+const string_to_command = (command: string): string[] => {
+    const unwrap = (s: string): string[] => {
+        const splits = command.split(s);
+        return splits.map((split, index) => {
+            if (index % 2 === 0) {
+                return split.split(' ');
+            } else {
+                return [split];
+            }
+        }).flat().filter((split) => split !== '');
+
+    }
+    return unwrap('"')
+}
 
 export class ServiceApiEndpoint {
     private websocket: WebSocket | null = null;
@@ -100,6 +128,15 @@ export class ServiceApiEndpoint {
         const response = await fetch(this.build_url('status'));
         const text = await response.text();
         return text === 'true';
+    }
+
+    public async run_command(command_id: string, command: string): Promise<RunCommandResponse> {
+        const response = await fetch(this.build_url("command"), {
+            method: 'POST',
+            body: JSON.stringify({command_id, command: string_to_command(command)}),
+            headers: {'Content-Type': 'application/json'}
+        });
+        return await response.json();
     }
 
 }

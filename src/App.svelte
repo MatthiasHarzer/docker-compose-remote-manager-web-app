@@ -5,6 +5,7 @@
   import Logs from "./lib/Logs.svelte";
   import ServiceSelect from "./lib/ServiceSelect.svelte";
   import Status from "./lib/Status.svelte";
+  import Commands from "./lib/Commands.svelte";
 
   const urlParams = new URLSearchParams(window.location.search);
 
@@ -36,7 +37,6 @@
 
   $: has_manage_scope = available_scopes.includes(AccessKeyScope.MANAGE);
   $: has_view_status_scope = available_scopes.includes(AccessKeyScope.STATUS) || has_manage_scope;
-  // $: has_view_logs_scope = available_scopes.includes(AccessKeyScope.LOGS) || has_manage_scope;
 
   const start = async () => {
     loading = true;
@@ -95,6 +95,11 @@
       <Logs api_handler={api_handler}/>
     {/if}
   </div>
+  {#if selected_service && api_handler}
+    <div class="commands">
+      <Commands service="{selected_service}" api_handler="{api_handler}"/>
+    </div>
+  {/if}
 </main>
 
 <style lang="scss">

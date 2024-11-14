@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type {ServiceApiEndpoint} from "../api_handler";
+  import type {LogLine, ServiceApiEndpoint} from "../api_handler";
   import {local_storage_memo} from "../local_storage_memo";
 
   export let api_handler: ServiceApiEndpoint;
 
-  let lines: string[][] = [];
+  let lines: LogLine[] = [];
   let logs_el: HTMLElement;
   let selected_services: string[] = [];
   let service_log_count: Record<string, number> = {};
@@ -224,6 +224,7 @@
     border: 1px solid #d9d9d9;
     margin-bottom: 0;
     font-family: "Sono", monospace;
+    box-sizing: border-box;
 
     .log-line {
       display: flex;
@@ -242,6 +243,7 @@
       .log-icon {
         color: #d9d9d9;
         height: 1.3rem;
+        flex: 0 0 auto;
       }
 
       .log-name {
