@@ -40,7 +40,7 @@
 }
 
 :root {
-    color-scheme: light dark;
+    color-scheme: dark;
 
     --click-color: #535bf2;
     --greyed: rgb(179, 179, 179);
